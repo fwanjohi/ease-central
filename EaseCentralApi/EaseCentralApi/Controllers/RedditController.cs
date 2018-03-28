@@ -101,7 +101,7 @@ namespace EaseCentralApi.Controllers
         [Route("api/reddit/favorites/{token}")]
         public HttpResponseMessage GetFavorites(HttpRequestMessage request, string token)
         {
-            var svc = new RedditService();
+            var svc = new RedditService(); 
             var existing = svc.GetUserByToken(token);
 
             if (existing == null)
