@@ -23,7 +23,8 @@ namespace EaseCentralApi.Services
 
         private Repository GetRepository()
         {
-            var userJson = File.ReadAllText("repository.json");
+            var fullPath = System.Web.Hosting.HostingEnvironment.MapPath(@"~/App_Data/repository.json");
+            var userJson = File.ReadAllText(fullPath);
             var repository = JsonConvert.DeserializeObject<Repository>(userJson);
             return repository;
         }
@@ -31,8 +32,10 @@ namespace EaseCentralApi.Services
         private void SaveRepository(Repository rep)
         {
             var json = JsonConvert.SerializeObject(rep);
-            //TODO: SAVE THE DATA SOMEWHERE
-            //File.WriteAllText("repository.json", json);
+            var fullPath = System.Web.Hosting.HostingEnvironment.MapPath(@"~/App_Data/repository.json");
+            
+            
+            File.WriteAllText(fullPath, json);
         }
 
         public User GetUserByToken(string token)
@@ -40,14 +43,17 @@ namespace EaseCentralApi.Services
 
             var repository = GetRepository();
             var user = repository.Users.FirstOrDefault(u => u.Token == token);
-            //return user;
-            //TODO: RETURN A REAL USER FROM SOME DATA STORED
-            return new User
-            {
-                Token = Guid.NewGuid().ToString(),
-                UserName = "fake user",
-                Favorites = new List<string>()
-            };
+            return user;
+           
+        }
+
+        public User GetUserByUserName(string userName)
+        {
+
+            var repository = GetRepository();
+            var user = repository.Users.FirstOrDefault(u => u.UserName == userName);
+            return user;
+           
 
         }
 
@@ -55,27 +61,36 @@ namespace EaseCentralApi.Services
         {
             var repository = GetRepository();
             var exists = repository.Users.FirstOrDefault(u => u.UserName == user.UserName);
-            if (exists != null)
+            if (exists == null)
             {
                 repository.Users.Add(user);
             }
+            else
+            {
+                exists.Token = user.Token;
+                exists.Password = user.Password;
+                exists.Favorites = user.Favorites;
+            }
 
-            //SaveRepository(repository);
+            SaveRepository(repository);
 
             return exists != null;
 
         }
 
-        public List<Reddit> GetReditsForUser(string token)
+        public List<Reddit> GetRedditsForUser(User user)
         {
-            //TODO: Since I do not have a storage for now, I will just retun the first 3 from all
-            
-            var userRedits = GetAllRedits().Take(3).ToList();
-            return userRedits;
+            var faveIds = user.Favorites.Select(x=> x.RedditId).ToList();
 
+            var allRedits = GetAllReddits();
+
+            var userReddits = allRedits.Where(m => faveIds.Contains(m.RedditId)).ToList();
+
+             
+            return userReddits;
         }
 
-        public List<Reddit> GetAllRedits()
+        public List<Reddit> GetAllReddits()
         {
             var json = GetRedditJson();
 
@@ -100,6 +115,11 @@ namespace EaseCentralApi.Services
 
             return reddits;
         }
+
+        //public bool AddFavorite(Favorite fave)
+        //{
+           
+        //}
     }
 
 }

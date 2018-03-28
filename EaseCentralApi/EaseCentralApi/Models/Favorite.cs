@@ -8,8 +8,8 @@ namespace EaseCentralApi.Models
 {
     public class Favorite
     {
-        [JsonProperty("access_token")]
-        public string AccessToken { get; set; }
+    //    [JsonProperty("access_token")]
+    //    public string AccessToken { get; set; }
 
         [JsonProperty("reddit_id")]
         public string RedditId { get; set; }

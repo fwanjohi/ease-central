@@ -24,7 +24,7 @@ namespace EaseCentralApi.Controllers
                 return request.CreateErrorResponse(HttpStatusCode.Unauthorized, "No Token Supplied. Please register or login");
             }
             var svc = new RedditService();
-            var reddits = svc.GetAllRedits();
+            var reddits = svc.GetAllReddits();
 
             return request.CreateResponse(HttpStatusCode.OK, reddits);
         }
@@ -34,35 +34,62 @@ namespace EaseCentralApi.Controllers
         [Route("api/reddit/register")]
         public HttpResponseMessage Register(HttpRequestMessage request, [FromBody]User user)
         {
+            var existing = new RedditService().GetUserByUserName(user.UserName);
+            if (existing != null)
+            {
+                return  request.CreateErrorResponse(HttpStatusCode.Conflict, $"the username {user.UserName} is already taken");
+            }
+
+            user.Token = Guid.NewGuid().ToString();
+            user.Favorites = new List<Favorite>();
             var saved = new RedditService().SaveUser(user);
-            return request.CreateResponse(HttpStatusCode.OK, Guid.NewGuid().ToString());
+
+            return request.CreateResponse(HttpStatusCode.OK, user.Token);
         }
 
         [HttpPost()]
         [Route("api/reddit/login")]
         public HttpResponseMessage Login(HttpRequestMessage request, [FromBody]User user)
         {
-            //TO DO, SINCE i do not have storeage I will just return a fake token
-            var existing = new RedditService().GetUserByToken(user.Token);
+           
+            var existing = new RedditService().GetUserByUserName(user.UserName);
+            //not found, or wrong passsword
+            if (existing == null || existing.Password != user.Password)
+            {
+                return request.CreateErrorResponse(HttpStatusCode.NotFound, $"User {user.UserName} or password is wrong not found.");
+            };
+
             return request.CreateResponse(HttpStatusCode.OK, existing.Token);
         }
        
         [HttpPut()]
-        [Route("api/reddit/favorite")]
-        public HttpResponseMessage Favorite(HttpRequestMessage request, [FromBody]Favorite favorite)
+        [Route("api/reddit/favorite/{token}")]
+        public HttpResponseMessage AddFavorite(HttpRequestMessage request, string token, [FromBody]Favorite favorite)
         {
             try
             {
-                //List<string> faves = new List<string>();
-                //faves.Add("maya");
-                //faves.Add ("tttyy");
-                //faves.Add("ffx");
+                var svc = new RedditService();
+                var existing = svc.GetUserByToken(token);
 
-                //var fx = new Favorite { AccessToken = Guid.NewGuid().ToString(), RedditId = "xauys_t", Tags = faves };
+                if (existing == null)
+                {
+                    return  request.CreateErrorResponse(HttpStatusCode.NotFound, "Invalid access token");
+                }
 
+                var reddit = svc.GetAllReddits().FirstOrDefault(x=> x.RedditId == favorite.RedditId);
+                if (reddit == null)
+                {
+                    return request.CreateErrorResponse(HttpStatusCode.NotFound, $"Reddit Id {favorite.RedditId} not Found");
+                }
+                
+
+                if (existing.Favorites == null) existing.Favorites = new List<Favorite>();
+
+                existing.Favorites.Add(favorite);
+                svc.SaveUser(existing);
+                
                 return request.CreateResponse(HttpStatusCode.OK, $"Your tages for {favorite.RedditId} has been saved" );
 
-                //return request.CreateResponse(HttpStatusCode.OK, fx);
             }
             catch
             {
@@ -72,10 +99,18 @@ namespace EaseCentralApi.Controllers
 
         [HttpGet()]
         [Route("api/reddit/favorites/{token}")]
-        public HttpResponseMessage Favorites(HttpRequestMessage request, string token)
+        public HttpResponseMessage GetFavorites(HttpRequestMessage request, string token)
         {
-            var fakeRedits = new RedditService().GetReditsForUser(token);
-            return request.CreateResponse(HttpStatusCode.OK, fakeRedits);
+            var svc = new RedditService();
+            var existing = svc.GetUserByToken(token);
+
+            if (existing == null)
+            {
+                return request.CreateErrorResponse(HttpStatusCode.NotFound, "Invalid access token");
+            }
+
+            var redits = svc.GetRedditsForUser(existing);
+            return request.CreateResponse(HttpStatusCode.OK, redits);
         }
 
        

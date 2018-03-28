@@ -17,6 +17,7 @@ namespace EaseCentralApi.Models
         [JsonProperty("token")]
         public string Token { get; set; }
 
-        public List<string> Favorites { get; set; }
+        [JsonProperty("favorites")]
+        public List<Favorite> Favorites { get; set; }
     }
 }
