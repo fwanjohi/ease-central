@@ -68,6 +68,19 @@ namespace EaseCentralApi.Controllers
         {
             try
             {
+                //var fav  = new Favorite
+                //{
+                //    RedditId = "87y0ei",
+                //    Tags = new List<string>
+                //    {
+                //        {"sasa" }, {"when"}
+                //    }
+                //};
+
+                //return request.CreateResponse(HttpStatusCode.OK, fav);
+
+
+
                 var svc = new RedditService();
                 var existing = svc.GetUserByToken(token);
 
@@ -76,7 +89,10 @@ namespace EaseCentralApi.Controllers
                     return  request.CreateErrorResponse(HttpStatusCode.NotFound, "Invalid access token");
                 }
 
-                var reddit = svc.GetAllReddits().FirstOrDefault(x=> x.RedditId == favorite.RedditId);
+                var reddits = svc.GetAllReddits();
+
+                var reddit = reddits.FirstOrDefault(x => x.RedditId == favorite.RedditId);
+
                 if (reddit == null)
                 {
                     return request.CreateErrorResponse(HttpStatusCode.NotFound, $"Reddit Id {favorite.RedditId} not Found");
@@ -91,15 +107,15 @@ namespace EaseCentralApi.Controllers
                 return request.CreateResponse(HttpStatusCode.OK, $"Your tages for {favorite.RedditId} has been saved" );
 
             }
-            catch
+            catch(Exception ex)
             {
-                return request.CreateErrorResponse(HttpStatusCode.BadRequest, "Bad Request");
+                return request.CreateErrorResponse(HttpStatusCode.BadRequest, "Bad Request " + ex.Message);
             }
         }
 
         [HttpGet()]
-        [Route("api/reddit/favorites/{token}")]
-        public HttpResponseMessage GetFavorites(HttpRequestMessage request, string token)
+        [Route("api/reddit/favorites/{token}/{tag}")]
+        public HttpResponseMessage GetFavorites(HttpRequestMessage request, string token, string tag)
         {
             var svc = new RedditService(); 
             var existing = svc.GetUserByToken(token);
@@ -109,7 +125,7 @@ namespace EaseCentralApi.Controllers
                 return request.CreateErrorResponse(HttpStatusCode.NotFound, "Invalid access token");
             }
 
-            var redits = svc.GetRedditsForUser(existing);
+            var redits = svc.GetRedditsForUser(existing, tag);
             return request.CreateResponse(HttpStatusCode.OK, redits);
         }
 

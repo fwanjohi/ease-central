@@ -78,15 +78,21 @@ namespace EaseCentralApi.Services
 
         }
 
-        public List<Reddit> GetRedditsForUser(User user)
+        public List<Reddit> GetRedditsForUser(User user, string tag)
         {
             var faveIds = user.Favorites.Select(x=> x.RedditId).ToList();
 
             var allRedits = GetAllReddits();
 
             var userReddits = allRedits.Where(m => faveIds.Contains(m.RedditId)).ToList();
+            var tagged = new List<Reddit>();
 
-             
+            //foreach(Reddit r in user.Favorites)
+            //{
+            //    if (r.
+            //}
+
+               
             return userReddits;
         }
 
